@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>D-BIAT</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+  <link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/black-tie/jquery-ui.min.css" rel="stylesheet" type="text/css"></link>
+  <script src="jspsych.js"></script>
+  <script src="plugins/jspsych-biat-html.js"></script>
+  <script src="plugins/jspsych-biat-button-html.js"></script>
+  <script src="plugins/jspsych-html-keyboard-response.js"></script>
+  <script src="plugins/jspsych-html-button-response.js"></script>
+  <link href="css/jspsych.css" rel="stylesheet"></link>
+</head>
+<body>
+</body>
+<script>
+
+function generate() {
+  const BLOCKS = 4
+  const LEFT_KEY = 'E'
+  const RIGHT_KEY = 'I' 
+
+  const BLOCK_WITHOUT = {
+    timeline: [
+      {
+        type: 'biat-html',
+        stimulus: jsPsych.timelineVariable('stimulus'), 
+        stim_key_association: jsPsych.timelineVariable('stim_key_association'),
+        html_when_wrong: '<span style="color: red; font-size: 80px">X</span>',
+        bottom_instructions: '<p>If you press the wrong key, a red X will appear. Press the other key to continue</p>',
+        force_correct_key_press: true,
+        display_feedback: true,
+        trial_duration: 3000, //Only if display_feedback is false
+        lower_category_label: 'Me',
+        response_ends_trial: true,
+      }
+    ],
+    timeline_variables: [],
+    randomize_order: true,
+    repetitions: 0
+  }
+  
+  const SCENARIO = Math.floor(Math.random() * 4)
+  
+
+  // Select 1 of 4 scenarios
+  var cat = null
+  var not_cat = null
+  var disp = null
+  var not_disp = null
+  var lower_disp = null
+  var not_lower_disp = null
+
+  console.log(SCENARIO)
+  if (SCENARIO === 0) {
+      cat = 'Life'
+      not_cat = 'Death'
+      disp = LEFT_KEY
+      not_disp = RIGHT_KEY
+      data: { iat_type: 'life-me' }
+  } else if (SCENARIO === 1) {
+      cat = 'Death'
+      not_cat = 'Life'
+      disp = LEFT_KEY
+      not_disp = RIGHT_KEY
+      data: { iat_type: 'death-me' }
+  } else if (SCENARIO === 2) {
+      cat = 'Life'
+      not_cat = 'Death'
+      disp = RIGHT_KEY
+      not_disp = LEFT_KEY
+      data: { iat_type: 'life-me' }
+  } else if (SCENARIO === 3) {
+      cat = 'Death'
+      not_cat = 'Life'
+      disp = RIGHT_KEY
+      not_disp = LEFT_KEY
+      data: { iat_type: 'death-me' }
+  }
+  
+  // Set order of scenarios
+  var ORDER = [ {
+              upper_category_label: cat, 
+              displayed_categories_key: disp,
+              notdisplayed_categories_key: not_disp,
+          },
+          {
+              upper_category_label: not_cat, 
+              displayed_categories_key: disp,
+              notdisplayed_categories_key: not_disp,
+          },
+          {
+              upper_category_label: cat, 
+              displayed_categories_key: not_disp,
+              notdisplayed_categories_key: disp,
+          },
+          {
+              upper_category_label: not_cat, 
+              displayed_categories_key: not_disp,
+              notdisplayed_categories_key: disp
+          }
+      ]
+
+  var generated_blocks = []
+  
+  // Set stimuli based on senario
+  for(var i = 0 ; i < BLOCKS ; i++){
+      var order = ORDER[i % 4]
+      var timeline_variables = [
+        {stimulus: "Them", stim_key_association: order.notdisplayed_categories_key},
+        {stimulus: "Other", stim_key_association: order.notdisplayed_categories_key},
+        {stimulus: "They", stim_key_association: order.notdisplayed_categories_key},
+        {stimulus: "Their", stim_key_association: order.notdisplayed_categories_key},
+        {stimulus: "Myself", stim_key_association: order.displayed_categories_key},
+        {stimulus: "I", stim_key_association: order.displayed_categories_key},
+        {stimulus: "Self", stim_key_association: order.displayed_categories_key},
+        {stimulus: "Mine", stim_key_association: order.displayed_categories_key},
+      ]
+      if (order.upper_category_label === 'Life') {
+        timeline_variables = timeline_variables.concat([
+          {stimulus: "Deceased", stim_key_association: order.notdisplayed_categories_key},
+          {stimulus: "Suicide", stim_key_association: order.notdisplayed_categories_key},
+          {stimulus: "Dead", stim_key_association: order.notdisplayed_categories_key},
+          {stimulus: "Die", stim_key_association: order.notdisplayed_categories_key},
+          {stimulus: "Living", stim_key_association: order.displayed_categories_key},
+          {stimulus: "Breathing", stim_key_association: order.displayed_categories_key},
+          {stimulus: "Thriving", stim_key_association: order.displayed_categories_key},
+          {stimulus: "Alive", stim_key_association: order.displayed_categories_key},
+        ])
+      }
+      else if (order.upper_category_label === 'Death') {
+        timeline_variables = timeline_variables.concat([
+          {stimulus: "Deceased", stim_key_association: order.displayed_categories_key},
+          {stimulus: "Suicide", stim_key_association: order.displayed_categories_key},
+          {stimulus: "Dead", stim_key_association: order.displayed_categories_key},
+          {stimulus: "Die", stim_key_association: order.displayed_categories_key},
+          {stimulus: "Living", stim_key_association: order.notdisplayed_categories_key},
+          {stimulus: "Breathing", stim_key_association: order.notdisplayed_categories_key},
+          {stimulus: "Thriving", stim_key_association: order.notdisplayed_categories_key},
+          {stimulus: "Alive", stim_key_association: order.notdisplayed_categories_key},
+        ])
+      } else {
+        throw error('mismatch category labels with stim keys')
+      }
+      var new_block = JSON.parse(JSON.stringify(BLOCK_WITHOUT))
+      for(var key in order) {
+          new_block.timeline[0][key] = order[key]
+      }
+      new_block.timeline_variables = timeline_variables
+      new_block.totalblocks = BLOCKS
+      new_block.current_block = i+1
+      generated_blocks.push(new_block)
+  }
+  
+  return generated_blocks
+}
+
+// Initial welcome display
+var welcome_block = {
+  type: 'html-keyboard-response',
+  stimulus: '<p>Welcome!<br><br> In this study you will ' +
+  'complete a Brief Implicit Association Test (BIAT) in which you ' +
+  'will be asked to sort words into groups as ' +
+  'fast as you can.</p><p>Press any key to begin.</p>',
+  post_trial_gap: 500
+};
+
+// Instruction block which explains categories
+var category_block = {
+  type: 'html-keyboard-response',
+  stimulus: "<p>In this task, you will be presented with words to classify into categories " +
+  "using two computer keys, <strong>E</strong> and <strong>I</strong>. " +
+  "It requires you to go as quickly as you can while making as few mistakes as possible. " +
+  "Going too slow or making too many mistakes will result in an uninterpretable score. " +
+  "These are the possible target categories and the words that belong with each: <br><br>" +
+  "<strong>Life</strong>: Living, Breathing, Thrive, Alive<br><br> " +
+  "<strong>Death</strong>: Deceased, Suicide, Dead, Die<br><br> " +
+  "<strong>Me</strong>: I, Myself, Mine, Self <br><br> " +
+  "In each round of the task, two of the categories will be designated as target categories. " +
+  "When you see a word from a currently targeted category, press the indicated key (for example, <strong>I</strong>) as quickly as possible. " +
+  "When you see a word that does NOT belong in a currently targeted category, press the other key (for example, <strong>E</strong>). " +
+  "Press any key to continue.</p>",
+  post_trial_gap: 500
+};
+
+/* 
+var debrief_block = {
+  type: "html-keyboard-response",
+  stimulus: function() {
+    // calculate D-score from https://faculty.washington.edu/agg/pdf/GB&N.JPSP.2003.pdf
+    // first find mean RT
+    var life_me = jsPsych.data.get().filter({iat_type: 'life-me'}).filterCustom(function(x) { return x.rt < 10000 });
+    var mean_correct_responses_life_me = life_me.filter({correct: true}).select('rt').mean();
+    var death_me = jsPsych.data.get().filter({iat_type: 'death-me'}).filterCustom(function(x) { return x.rt < 10000 });
+    var mean_correct_responses_death_me = death_me.filter({correct: true}).select('rt').mean();
+
+    // get overall sd
+    var sd = life_me.join(death_me).filter({correct: true}).select('rt').sd();
+
+    var d = (mean_correct_responses_life_me - mean_correct_responses_death_me) / sd;
+
+    return "<p>You're done! Below is some information about how you performed.</p>"+
+      "<p>When the pairs was LIFE/ME, it took you an average of <strong>"+Math.floor(mean_correct_responses_life_me)+"ms</strong> to respond.</p>"+
+      "<p>When the pairs was DEALTH/ME, it took you an average of <strong>"+Math.floor(mean_correct_responses_death_me)+"ms</strong> to respond.</p>"+
+      "<p>Your D score, an index of performance that takes into account this difference and the overall level of variability in your responses, is <strong>"+d.toFixed(2)+"</strong></p>"+
+      "<p>For reference, the Project Implicit IAT website labels D scores above 0.15 as a slight bias, scores above 0.35 as a moderate bias, and scores above 0.65 a strong bias.</p>"
+    }
+  };
+*/
+
+// Conclusion block
+var debrief_block = {
+  type: 'html-keyboard-response',
+  stimulus: "<p>Thank you for participating! <br><br> Please press any key to continue to the survey. </p>",
+};
+
+// Push blocks to timeline
+var timeline = [];
+  timeline.push(welcome_block);
+  timeline.push(category_block);
+
+
+generate().forEach(function (block) {
+  block.timeline[0].stimulus = jsPsych.timelineVariable('stimulus')
+  block.timeline[0].stim_key_association = jsPsych.timelineVariable('stim_key_association')
+  // Variables for instruction_block
+  var instruction_stimulus_uppercat = block.timeline[0].upper_category_label
+  var instruction_stimulus_lowercat = block.timeline[0].lower_category_label
+  var instruction_currentblock = block.current_block
+  var instruction_totalblocks = block.totalblocks
+  var instruction_key = block.timeline[0].displayed_categories_key
+  var instruction_notkey = block.timeline[0].notdisplayed_categories_key
+
+  // Instructions presented before each block
+  var instruction_block = {
+    type: "html-keyboard-response",
+    stimulus: "<div style='position: absolute; height: 20%; width: 100%; margin-left: auto; margin-right: auto; top: +200px; left: 0; right: 0'><p><u>Block " +instruction_currentblock+ " of " +instruction_totalblocks+ "</u></p><br><br><br></div>" +
+    "<p>In this block, you will use the <strong> " +instruction_key+ "</strong> key for <strong> " +instruction_stimulus_uppercat+ "</strong> and <strong> " +instruction_stimulus_lowercat+ "</strong> words. <br>" +
+    "The <strong> " +instruction_notkey+ "</strong> key is used for other words. <br><br>" +
+    "Put a right finger on <strong>I</strong> and a left finger on <strong>E</strong>. <br>" +
+    "Press any key to begin. </p>",
+    post_trial_gap: 0,
+  };
+
+  timeline.push(instruction_block)
+  timeline.push(block)
+  });
+
+timeline.push(debrief_block);
+
+jsPsych.init({
+  timeline: timeline,
+  on_finish: function() {
+  jsPsych.data.displayData();
+  }
+});
+
+var subn = jsPsych.data.getURLVariable('subn');
+var qualtricsLink = "https://harvard.az1.qualtrics.com/jfe/form/SV_1TwBTGMwdkvSaTH?subn=" + subn
+
+
+// function to save data
+function saveData(filename, filedata){
+$.ajax({
+type:'post',
+cache: false,
+url: 'save_data.php', // this is the path to the above PHP script
+data: {filename: filename, filedata: filedata},
+complete: function() {
+window.location.href = qualtricsLink; // make sure data saves out!!
+}
+});
+}
+
+
+jsPsych.init({
+  timeline: timeline,
+   // code to define the experiment structure would go here...
+    on_finish: function() {
+      jsPsych.data.addProperties({subn: subn});
+      var start_time = jsPsych.startTime();
+      var total_time = jsPsych.totalTime();
+      jsPsych.data.addProperties({startTime: start_time});
+      jsPsych.data.addProperties({totalTime: total_time});
+      var today = new Date();
+      var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+      var time = today.getHours() + "_" + today.getMinutes() + "_" + today.getSeconds();
+      var dateTime = date+' '+time;
+      saveData(subn + '_' + dateTime + '_' + "_gng_data.csv", jsPsych.data.get().csv());
+}
+});
+
+</script>
+</html>
